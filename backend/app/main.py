@@ -33,8 +33,3 @@ app.include_router(chat.router)
 @app.get("/api/health")
 def health() -> dict:
     return {"status": "ok"}
-
-
-@app.get("/api/debug-cors")
-def debug_cors() -> dict:
-    return {"frontend_origin_repr": repr(_frontend_origin), "allowed_origins": _allowed_origins}
