@@ -2,8 +2,9 @@ import anthropic
 import httpx
 from fastapi.testclient import TestClient
 
+import app.llm as llm_module
 import app.routes.chat as chat_module
-from app.llm import ask
+from app.llm import LLMConfigError, ask, get_client
 from app.main import app
 
 client = TestClient(app)
@@ -78,3 +79,24 @@ def test_chat_route_llm_error_returns_clear_500_not_silent(monkeypatch):
     response = client.post("/api/chat", json={"question": "who has the most engagement?"})
     assert response.status_code == 500
     assert "LLM request failed" in response.json()["detail"]
+
+
+def test_get_client_raises_clear_error_when_api_key_unset(monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
+    monkeypatch.setattr(llm_module, "_client", None)
+    try:
+        get_client()
+        assert False, "expected LLMConfigError"
+    except LLMConfigError as exc:
+        assert "ANTHROPIC_API_KEY" in str(exc)
+
+
+def test_chat_route_missing_api_key_returns_clear_500_not_a_dropped_connection(monkeypatch):
+    def raise_config_error(question: str):
+        raise LLMConfigError("ANTHROPIC_API_KEY is not set.")
+
+    monkeypatch.setattr(chat_module, "ask", raise_config_error)
+    response = client.post("/api/chat", json={"question": "who has the most engagement?"})
+    assert response.status_code == 500
+    assert "ANTHROPIC_API_KEY" in response.json()["detail"]

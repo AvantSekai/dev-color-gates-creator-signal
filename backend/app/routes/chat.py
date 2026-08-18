@@ -2,7 +2,7 @@ import anthropic
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from app.llm import ask
+from app.llm import LLMConfigError, ask
 
 router = APIRouter()
 
@@ -19,6 +19,8 @@ def chat(payload: ChatRequest) -> dict:
 
     try:
         return ask(question)
+    except LLMConfigError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
     except anthropic.APIError as exc:
         raise HTTPException(
             status_code=500,
