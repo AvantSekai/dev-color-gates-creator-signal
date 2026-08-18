@@ -91,7 +91,7 @@ docs/
 
 **Test scenarios:**
 - Loading the CSV returns 1000 rows.
-- `compute_promising_pool` returns exactly 221 creators (matches the number verified during brainstorm dialogue).
+- `compute_promising_pool` returns exactly 205 creators (250K floor gives 221 candidates; 16 of those exceed the 10M ceiling and are excluded — combined floor+ceiling pool is 205, not the floor-only 221 figure that appeared earlier in dialogue).
 - `billieeilish` is excluded (total views > 10M ceiling).
 - A known top-rate creator (`reus.fx`, ~40% rate) appears near the top of the ranked pool.
 - `get_dataset_meta()` returns date range `2020-09-22` to `2020-12-21`.
@@ -110,10 +110,10 @@ docs/
 
 **Files:** `backend/app/routes/summary.py`, `backend/app/main.py` (register route), `backend/tests/test_summary_route.py`.
 
-**Approach:** `GET /api/summary` returns `{meta: {...}, creators: [...]}` where each creator has `handle, total_views, engagement_rate, verified, video_count, sample_caption`. No pagination needed at 221 rows — frontend slices to a top-N display if needed (deferred UI decision per origin doc Outstanding Questions).
+**Approach:** `GET /api/summary` returns `{meta: {...}, creators: [...]}` where each creator has `handle, total_views, engagement_rate, verified, video_count, sample_caption`. No pagination needed at 205 rows — frontend slices to a top-N display if needed (deferred UI decision per origin doc Outstanding Questions).
 
 **Test scenarios:**
-- `GET /api/summary` returns 200 with `meta.promising_count == 221`.
+- `GET /api/summary` returns 200 with `meta.promising_count == 205`.
 - Response creators are sorted descending by `engagement_rate`.
 - Response includes `meta.date_range`.
 

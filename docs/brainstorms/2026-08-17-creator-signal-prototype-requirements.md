@@ -13,7 +13,7 @@ Source data: `2026datathon_interview_data.csv` — 1,000 TikTok video rows, 802 
 2. **Definition of "promising"** (data-grounded, tested against real rows before locking):
    - Aggregate per creator (`author_name`) across all their videos in the batch.
    - **Reach floor: total views ≥ 250,000** (221 of 802 creators survive — a curated pool sized for a one-screen summary).
-   - **Reach ceiling: total views ≤ 10,000,000.** Excludes ~16 already-massive/celebrity-tier accounts (e.g. `billieeilish` at 250.8M views) — already famous, not realistic recruit/pitch targets. Ceiling values from 5M–20M all exclude essentially the same cluster, so 10M is a round-number default, not a contested threshold.
+   - **Reach ceiling: total views ≤ 10,000,000.** Excludes 16 already-massive/celebrity-tier accounts (e.g. `billieeilish` at 250.8M views) from within the floor-qualified set — already famous, not realistic recruit/pitch targets. Ceiling values from 5M–20M all exclude essentially the same cluster, so 10M is a round-number default, not a contested threshold. **Combined floor + ceiling pool: 205 creators** (221 pass the floor alone; 16 of those are also above the ceiling).
    - **Rank survivors by engagement rate** = average of `(likes + comments + shares) / views` per video, averaged across the creator's videos in-batch. Pure reach surfaces celebrities; pure engagement rate surfaces 1-video noise accounts. Floor + ceiling + rate avoids both failure modes.
    - Population reference: median creator in this batch sits at ~96K total views, ~8.7% engagement rate.
 
@@ -30,7 +30,7 @@ Source data: `2026datathon_interview_data.csv` — 1,000 TikTok video rows, 802 
 
 ## Deliverables
 
-- **Screen 1 — At a Glance Summary**: single screen, ranked list of promising creators (250K–10M pool, engagement-rate ranked). Per creator: handle, total views, engagement rate, verified badge, video count, one representative caption/hashtag. Header stat bar: creators evaluated (802), promising-cutoff count (221), dataset date range with "sample data" label.
+- **Screen 1 — At a Glance Summary**: single screen, ranked list of promising creators (250K–10M pool, engagement-rate ranked). Per creator: handle, total views, engagement rate, verified badge, video count, one representative caption/hashtag. Header stat bar: creators evaluated (802), promising-cutoff count (205), dataset date range with "sample data" label.
 - **Screen 2 — Q&A Chat**: natural-language input, hybrid-grounded answers, visible computed-fact vs. AI-interpretation labeling.
 - **README.md**: what it does, how "promising" is defined and why, how to run/deploy.
 - **Data flow sketch**: question → LLM parses intent → computation layer runs against CSV → (if judgment question) LLM reasons with labeled-opinion output → plain-English answer.
@@ -46,7 +46,7 @@ Source data: `2026datathon_interview_data.csv` — 1,000 TikTok video rows, 802 
 ## Assumptions
 
 - 10M view ceiling is a default, not a rigorously optimized cutoff.
-- Summary screen shows the full 221-creator pool or a reasonable top-N slice (e.g. top 25-50) — exact display count is a UI-layer call for `/ce-plan`.
+- Summary screen shows the full 205-creator pool (250K-10M floor/ceiling) or a reasonable top-N slice (e.g. top 25-50) — exact display count is a UI-layer call for `/ce-plan`.
 - Verified badge is displayed as metadata only, not used as a scoring input.
 
 ## Outstanding Questions
