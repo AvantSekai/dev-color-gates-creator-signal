@@ -9,10 +9,29 @@ cannot invent the numbers.
 from __future__ import annotations
 
 import json
+from contextvars import ContextVar
 
 from anthropic import beta_tool
 
 from app.data import get_creator, rank_all_creators
+
+# Records every tool call made during the current request, so the API response
+# can show the user exactly what data backed an answer -- not just a badge.
+_call_log: ContextVar[list[dict] | None] = ContextVar("_call_log", default=None)
+
+
+def start_call_log() -> None:
+    _call_log.set([])
+
+
+def get_call_log() -> list[dict]:
+    return _call_log.get() or []
+
+
+def _record(tool_name: str, tool_input: dict, output: object) -> None:
+    log = _call_log.get()
+    if log is not None:
+        log.append({"tool": tool_name, "input": tool_input, "output": output})
 
 
 def _format_creator(c: dict) -> dict:
@@ -46,9 +65,15 @@ def rank_creators(
         max_views=max_views or None,
         limit=limit,
     )
+    formatted = [_format_creator(c) for c in results]
+    _record(
+        "rank_creators",
+        {"sort_by": sort_by, "min_views": min_views, "max_views": max_views, "limit": limit},
+        formatted,
+    )
     if not results:
         return "No creators matched those filters."
-    return json.dumps([_format_creator(c) for c in results])
+    return json.dumps(formatted)
 
 
 @beta_tool
@@ -60,8 +85,11 @@ def get_creator_stats(handle: str) -> str:
     """
     creator = get_creator(handle)
     if creator is None:
+        _record("get_creator_stats", {"handle": handle}, {"error": "not found"})
         return f'No creator found with handle "{handle}". It may be misspelled or not in this dataset.'
-    return json.dumps(_format_creator(creator))
+    formatted = _format_creator(creator)
+    _record("get_creator_stats", {"handle": handle}, formatted)
+    return json.dumps(formatted)
 
 
 @beta_tool
@@ -75,4 +103,5 @@ def compare_creators(handles: list[str]) -> str:
     for handle in handles:
         creator = get_creator(handle)
         results.append(_format_creator(creator) if creator else {"handle": handle, "error": "not found"})
+    _record("compare_creators", {"handles": handles}, results)
     return json.dumps(results)

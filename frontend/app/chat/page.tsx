@@ -3,13 +3,26 @@
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 
-import { askQuestion, type ChatResponse } from "@/lib/api";
+import { askQuestion, type ChatResponse, type ChatSource } from "@/lib/api";
 
 interface ChatMessage {
   role: "user" | "assistant";
   text: string;
   kind?: ChatResponse["kind"];
+  sources?: ChatSource[];
 }
+
+const KIND_LABEL: Record<ChatResponse["kind"], string> = {
+  computed: "Computed from data",
+  grounded_opinion: "Opinion, grounded in data",
+  opinion: "AI opinion",
+};
+
+const KIND_STYLE: Record<ChatResponse["kind"], string> = {
+  computed: "bg-emerald-100 text-emerald-800",
+  grounded_opinion: "bg-sky-100 text-sky-800",
+  opinion: "bg-amber-100 text-amber-800",
+};
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -31,7 +44,12 @@ export default function ChatPage() {
       const response = await askQuestion(question);
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", text: response.answer, kind: response.kind },
+        {
+          role: "assistant",
+          text: response.answer,
+          kind: response.kind,
+          sources: response.sources,
+        },
       ]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -65,16 +83,30 @@ export default function ChatPage() {
             >
               {m.role === "assistant" && m.kind && (
                 <span
-                  className={`mb-1 inline-block rounded px-2 py-0.5 text-xs font-medium ${
-                    m.kind === "computed"
-                      ? "bg-emerald-100 text-emerald-800"
-                      : "bg-amber-100 text-amber-800"
-                  }`}
+                  className={`mb-1 inline-block rounded px-2 py-0.5 text-xs font-medium ${KIND_STYLE[m.kind]}`}
                 >
-                  {m.kind === "computed" ? "Computed from data" : "AI opinion"}
+                  {KIND_LABEL[m.kind]}
                 </span>
               )}
               <p className="whitespace-pre-wrap">{m.text}</p>
+              {m.sources && m.sources.length > 0 && (
+                <details className="mt-2 text-xs text-gray-600">
+                  <summary className="cursor-pointer select-none">
+                    Data used ({m.sources.length})
+                  </summary>
+                  <div className="mt-1 space-y-1">
+                    {m.sources.map((s, si) => (
+                      <pre
+                        key={si}
+                        className="overflow-x-auto rounded bg-gray-50 p-2 text-[11px] whitespace-pre-wrap"
+                      >
+                        {s.tool}({JSON.stringify(s.input)}) &rarr;{"\n"}
+                        {JSON.stringify(s.output, null, 2)}
+                      </pre>
+                    ))}
+                  </div>
+                </details>
+              )}
             </div>
           </div>
         ))}

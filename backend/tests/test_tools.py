@@ -1,6 +1,12 @@
 import json
 
-from app.tools import compare_creators, get_creator_stats, rank_creators
+from app.tools import (
+    compare_creators,
+    get_call_log,
+    get_creator_stats,
+    rank_creators,
+    start_call_log,
+)
 
 
 def test_rank_creators_matches_promising_pool_top5():
@@ -37,3 +43,24 @@ def test_compare_creators_handles_unknown_handle_gracefully():
 def test_rank_creators_empty_result_returns_clear_message():
     result = rank_creators.func(min_views=999_999_999, max_views=999_999_999_999, limit=5)
     assert "No creators matched" in result
+
+
+def test_call_log_records_tool_invocations_for_provenance():
+    start_call_log()
+    get_creator_stats.func(handle="reus.fx")
+    rank_creators.func(sort_by="engagement_rate", limit=3)
+
+    log = get_call_log()
+    assert [entry["tool"] for entry in log] == ["get_creator_stats", "rank_creators"]
+    assert log[0]["input"] == {"handle": "reus.fx"}
+    assert log[0]["output"]["handle"] == "reus.fx"
+
+
+def test_call_log_is_empty_before_start_call_log_is_invoked():
+    # No start_call_log() call in this test -- the module-level contextvar default
+    # is None, so recording should be a no-op rather than erroring.
+    from app.tools import _call_log
+
+    _call_log.set(None)
+    get_creator_stats.func(handle="reus.fx")
+    assert get_call_log() == []

@@ -28,9 +28,16 @@ export async function fetchSummary(): Promise<SummaryResponse> {
   return res.json();
 }
 
+export interface ChatSource {
+  tool: string;
+  input: Record<string, unknown>;
+  output: unknown;
+}
+
 export interface ChatResponse {
   answer: string;
-  kind: "computed" | "opinion";
+  kind: "computed" | "grounded_opinion" | "opinion";
+  sources: ChatSource[];
 }
 
 export async function askQuestion(question: string): Promise<ChatResponse> {
