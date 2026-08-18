@@ -13,7 +13,7 @@ from contextvars import ContextVar
 
 from anthropic import beta_tool
 
-from app.data import get_creator, rank_all_creators
+from app.data import compute_promising_pool, get_creator, rank_all_creators
 
 # Records every tool call made during the current request, so the API response
 # can show the user exactly what data backed an answer -- not just a badge.
@@ -73,6 +73,22 @@ def rank_creators(
     )
     if not results:
         return "No creators matched those filters."
+    return json.dumps(formatted)
+
+
+@beta_tool
+def get_promising_creators(limit: int = 10) -> str:
+    """Get the agency's "promising" creators: total views between 250K and 10M,
+    ranked by average engagement rate. This is the same pool and ranking shown
+    on the summary dashboard -- use this tool (not rank_creators) whenever the
+    question is about which creators are "promising" or worth pursuing.
+
+    Args:
+        limit: Maximum number of creators to return.
+    """
+    results = compute_promising_pool()[:limit]
+    formatted = [_format_creator(c) for c in results]
+    _record("get_promising_creators", {"limit": limit}, formatted)
     return json.dumps(formatted)
 
 

@@ -4,6 +4,7 @@ from app.tools import (
     compare_creators,
     get_call_log,
     get_creator_stats,
+    get_promising_creators,
     rank_creators,
     start_call_log,
 )
@@ -15,6 +16,19 @@ def test_rank_creators_matches_promising_pool_top5():
     result = json.loads(rank_creators.func(sort_by="engagement_rate", min_views=250_000, max_views=10_000_000, limit=5))
     expected = compute_promising_pool()[:5]
     assert [c["handle"] for c in result] == [c["handle"] for c in expected]
+
+
+def test_get_promising_creators_matches_summary_pool():
+    from app.data import compute_promising_pool
+
+    result = json.loads(get_promising_creators.func(limit=5))
+    expected = compute_promising_pool()[:5]
+    assert [c["handle"] for c in result] == [c["handle"] for c in expected]
+
+
+def test_get_promising_creators_respects_limit():
+    result = json.loads(get_promising_creators.func(limit=3))
+    assert len(result) == 3
 
 
 def test_get_creator_stats_known_handle():
@@ -54,6 +68,15 @@ def test_call_log_records_tool_invocations_for_provenance():
     assert [entry["tool"] for entry in log] == ["get_creator_stats", "rank_creators"]
     assert log[0]["input"] == {"handle": "reus.fx"}
     assert log[0]["output"]["handle"] == "reus.fx"
+
+
+def test_get_promising_creators_records_call_log():
+    start_call_log()
+    get_promising_creators.func(limit=5)
+
+    log = get_call_log()
+    assert log[0]["tool"] == "get_promising_creators"
+    assert log[0]["input"] == {"limit": 5}
 
 
 def test_call_log_is_empty_before_start_call_log_is_invoked():

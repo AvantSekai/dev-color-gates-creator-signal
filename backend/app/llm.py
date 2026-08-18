@@ -27,6 +27,7 @@ from app.tools import (
     compare_creators,
     get_call_log,
     get_creator_stats,
+    get_promising_creators,
     rank_creators,
     start_call_log,
 )
@@ -42,7 +43,8 @@ SYSTEM_PROMPT = (
     "You are a research assistant helping a talent agency evaluate TikTok creators "
     "from a fixed historical dataset (Sep-Dec 2020, not live data). "
     "For questions about rankings, totals, or specific creators' stats, use the provided "
-    "tools -- never estimate or invent numbers. "
+    "tools -- never estimate or invent numbers. Use get_promising_creators specifically "
+    "for any question about which creators are \"promising\" or worth pursuing. "
     "For subjective questions (e.g. brand fit, content style), you may look up a creator's "
     "real stats first if it would ground your answer, then give your own judgment on top -- "
     "just be clear in your answer which parts are data and which are your read."
@@ -97,7 +99,7 @@ def ask(question: str, client: Anthropic | None = None) -> dict:
         model=MODEL,
         max_tokens=1024,
         system=SYSTEM_PROMPT,
-        tools=[rank_creators, get_creator_stats, compare_creators],
+        tools=[rank_creators, get_creator_stats, compare_creators, get_promising_creators],
         messages=[{"role": "user", "content": question}],
     )
 
